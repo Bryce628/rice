@@ -9,7 +9,6 @@
 			button{
 				background-color: #FFFFFF;
 			}
-			username{text-align:center;}
 		</style>
 	</head>
 	<body>
@@ -26,5 +25,42 @@
 			<br><input type='password'name='confirmPassword'>
 			<br><button>Register Your Free Account</button>
 		</div>
+		<script>
+		function grabData() {
+
+			// Getting all the input tags
+			var $inputs = document.querySelectorAll('input');
+
+			// Defining a variable to store all the data
+			var data = {};
+
+			// Looping through all the input tags
+			for(var i = 0; i < $inputs.length; i++) {
+
+				// Getting the ith input tag
+				var $input = $inputs[i];
+
+				// Getting the name of the data that the input tag holds
+				var name = $input.name;
+
+				// Getting the value that the user entered into the input tag
+				var value = $input.value;
+
+				// Storing the value and its name
+				data[name] = value
+			}
+
+			// Outputting the data
+			return data
+		}
+		function submit(){
+			var formData = grabData();
+			console.log(formData);	
+		}
+
+		var $button = document.querySelector('button')
+		$button.addEventListener('click', submit)
+
+		</script>
 	</body>
 </html>
