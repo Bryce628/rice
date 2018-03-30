@@ -27,6 +27,14 @@ app.get('/form', (req, res, next) => {
 	res.sendFile(filePath);
 });
 
+app.get('/', (req, res, next) => {
+
+	/* Get the absolute path of the html file */
+	var filePath = path.join(__dirname, './home.html')
+
+	/* Sends the html file back to the browser */
+	res.sendFile(filePath);
+});
 
 /* Defines what function to all when the server recieves any request from http://localhost:8080 */
 server.on('listening', () => {
