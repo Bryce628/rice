@@ -9,6 +9,9 @@
 			button{
 				background-color: #FFFFFF;
 			}
+			label{
+				color: #d8d8d8;
+			}
 		</style>
 	</head>
 	<body>
@@ -55,12 +58,11 @@
 		}
 		function submit(){
 			var formData = grabData();
-			console.log(formData);	
+			console.log(formData);
 		}
 
 		var $button = document.querySelector('button')
 		$button.addEventListener('click', submit)
-
 		</script>
 	</body>
 </html>
