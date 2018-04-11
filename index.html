@@ -4,7 +4,7 @@
 		<title>Game</title>
 		<style>
 			body{
-				background-color: #202a3a;
+				background-color: #17212d;
 			}
 			button{
 				background-color: #FFFFFF;
@@ -23,10 +23,10 @@
 			<label><br>Email</label>
 			<br><input type='text' name='email'>
 			<label><br>Password</label>
-			<br><input type='password'name='password'>
-			<label><br>Confirm Password</label>
-			<br><input type='password'name='confirmPassword'>
-			<br><button>Register Your Free Account</button>
+			<br><input type='password' name='password'>
+			<label><br>Verify Password</label>
+			<br><input type='password'name='verifyPassword'>
+			<br><button>Register Your Account</button>
 		</div>
 		<script>
 		function grabData() {
@@ -56,9 +56,17 @@
 			// Outputting the data
 			return data
 		}
+
+		function sendData(data){
+			var req = new XMLHttpRequest();
+			req.open('POST', '/form', true);
+			req.setRequestHeader('content-type', 'application/json');
+			req.send(JSON.stringify(data));
+		}
+
 		function submit(){
 			var formData = grabData();
-			console.log(formData);
+			sendData(formData);
 		}
 
 		var $button = document.querySelector('button')
