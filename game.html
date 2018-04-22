@@ -58,7 +58,6 @@
 			<ul></ul>
 			<div>
 				<input type='text'>
-				<button>Send</button>
 			</div>
 		</div>
     <script src='/js/socket.io.js'></script>
@@ -67,6 +66,23 @@
 			var $canvas = document.querySelector('canvas');
 			$canvas.width = window.screen.width;
 			$canvas.height = window.screen.height;
+
+			var $input = document.querySelector('input');
+			document.body.addEventListener('keypress', sendMessage);
+
+			function sendMessage(e){
+				if(e.key !== 'Enter') return;
+				if(document.activeElement.tagName !== 'INPUT') return;
+				if($input.value === '') return;
+				socket.emit('message', $input.value);
+				$input.value = '';
+			}
+			socket.on('newMessage', function(message){
+				var $ul = document.querySelector('#chat ul');
+				var $li = document.createElement('li');
+				$li.innerText = message;
+				$ul.appendChild($li);
+			});
 		</script>
 	</body>
 </html>

@@ -52,13 +52,14 @@
 			function readyStateChange() {
 				if(req.readyState !== 4) return;
 				if(req.status !== 200) return;
-				data = JSON.parse(req.responseText);
-				if(data.error) {
-					return alert(data.error);
+				var body = JSON.parse(req.responseText);
+				if(body.error){
+					return alert(body.error);
 				}
 				window.location.href = '/game';
 			}
 			req.onreadystatechange = readyStateChange;
+
 			// Sending the data in JSON format
 			req.send(JSON.stringify(data));
 			}
