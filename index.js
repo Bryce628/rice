@@ -5,6 +5,9 @@ var mongoose = require('mongoose');
 var usermodel = require('./user.js').getModel();
 var crypto = require('crypto');
 var Io = require('socket.io');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var session = require('express-session');
 
 /* The http module is used to listen for requests from a web browser */
 var http = require('http');
@@ -27,8 +30,10 @@ var dbAddress = process.env.MONGODB_URI || 'mongodb://127.0.0.1/game';
 
 function addSockets(){
 	io.on('connection', (socket) =>{
+		io.emit('newMessage', 'user conected');
 		console.log('user connected')
 		socket.on('disconnect', () => {
+			io.emit('newMessage', 'user disconnected');
 			console.log('user disconnected');
 		});
 		socket.on('message', (message) =>{
@@ -47,15 +52,31 @@ function startServer(){
 			if(err) return callback('Error in getting user from database');
 			if(!user) return callback('Username does not exist');
 			crypto.pbkdf2(password, user.salt, 10000, 256, 'sha256', function(err, hash) {
-				if(err) return callback('Error in hasing password');
-				if(password !== has.toString('base64')) return callback('Wrong password');
-				callback(null);
+				if(err) return callback('Error in hashing password');
+				if(user.password !== hash.toString('base64')) return callback('Wrong password');
+				callback(null, user);
 			});
 		});
 	}
 
 	app.use(bodyParser.json({ limit: '16mb'}));
 	app.use(express.static(path.join(__dirname, 'public')))
+	app.use(session({ secret: 'anything'}));
+	app.use(passport.initialize());
+	app.use(passport.session());
+
+	passport.use(new LocalStrategy({usernameField: 'username', passwordField: 'password'}, authenticateUser));
+
+	passport.serializeUser(function(user, done){
+		done(null, user.id);
+	});
+
+	passport.deserializeUser(function(id, done){
+		usermodel.findById(id, function(err, user){
+			done(err, user);
+		})
+	})
+
 	/* Defines what function to call when a request comes from the path '/' in http://localhost:8080 */
 	app.get('/form', (req, res, next) => {
 
@@ -75,8 +96,13 @@ function startServer(){
 		res.sendFile(filePath);
 	});
 
-	app.get('/game', (req, res, next) => {
+	app.get('/logout', (req, res, next) =>{
+		req.logOut();
+		res.redirect('/login');
+	});
 
+	app.get('/game', (req, res, next) => {
+		if(!req.user) res.redirect('/login');
 		var filePath = path.join(__dirname, './game.html')
 
 		res.sendFile(filePath);
@@ -125,14 +151,15 @@ function startServer(){
 	});
 
 	app.post('/login', (req,res, next) => {
-		// Converting the request in an user object
-		var username = req.body.username;
-		// Grabbing the password from the request
-		var password = req.body.password;
 
-		authenticateUser(username, password, function(err){
-			res.send({error: err});
-		})
+		passport.authenticate('local', function(err, user){
+			if(err) return res.send({error: err});
+
+			req.logIn(user, (err) => {
+				if (err) return res.send({error: err});
+				return res.send({error: null});
+			});
+		})(req, res, next);
 	});
 
 	/* Defines what function to all when the server recieves any request from http://localhost:8080 */
