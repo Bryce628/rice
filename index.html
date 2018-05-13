@@ -12,20 +12,40 @@
 			label{
 				color: #d8d8d8;
 			}
+			#avatar img{
+				width: 5vmax;
+				height: 5vmax;
+			}
 		</style>
 	</head>
 	<body>
-		<div><label>Username</label></div>
-		<div><input type='text' name='username'></div>
-		<div><label>Age</label></div>
-		<div><input type='text'name='age'></div>
-		<div><label>Email</label></div>
-		<div><input type='text' name='email'></div>
-		<div><label>Password</label></div>
-		<div><input type='password' name='password'></div>
-		<div><label>Verify Password</label></div>
-		<div><input type='password'name='verifyPassword'></div>
-		<div><button>Register Your Account</button></div>
+		<div>
+			<label>Username</label>
+			<br><input type='text' name='username'>
+		</div>
+		<div>
+			<label>Age</label>
+			<br><input type='text'name='age'>
+		</div>
+		<div>
+			<label>Email</label>
+			<br><input type='text' name='email'>
+		</div>
+		<div>
+			<label>Password</label>
+			<br><input type='password' name='password'>
+		</div>
+		<div>
+			<label>Verify Password</label>
+			<br><input type='password'name='verifyPassword'>
+		</div>
+		<div>
+			<label>Avatar</label>
+			<input type='file' accept='image/*' name='avatar'>
+			<div id='avatar'></div>
+		</div>
+		<div>
+			<button>Register Your Account</button>
 		</div>
 		<script>
 			function verifyPassword(){
@@ -37,59 +57,75 @@
 				return isSamePassword;
 			}
 
-			function grabData() {
-			// Getting all the input tags
-			var $inputs = document.querySelectorAll('input');
+			function grabData(data) {
+				// Getting all the input tags
+				var $inputs = document.querySelectorAll('input');
 
-			// Defining a variable to store all the data
-			var data = {};
+				// Defining a variable to store all the data
+				var data = {};
 
-			// Looping through all the input tags
-			for(var i = 0; i < $inputs.length; i++) {
-
-				// Getting the ith input tag
-				var $input = $inputs[i];
-
-				// Getting the name of the data that the input tag holds
-				var name = $input.name;
-
-				// Getting the value that the user entered into the input tag
-				var value = $input.value;
-
-				// Storing the value and its name
-				data[name] = value
-			}
-			// Outputting the data
-			return data
-		}
-
-		function sendData(data){
-			if(!verifyPassword()){
-				return;
-			}
-			var req = new XMLHttpRequest();
-			req.open('POST', '/form', true);
-			req.setRequestHeader('content-type', 'application/json');
-			// Alert the user to any errors from the server
-			function readyStateChange() {
-				if(req.readyState !== 4) return;
-				if(req.status !== 200) return;
-				data = JSON.parse(req.responseText);
-				if(data.error) {
-					alert(data.error);
+				// Looping through all the input tags
+				for(var i = 0; i < $inputs.length; i++) {
+					var $input = $inputs[i];
+					if($input.type === 'text' || $input.type === 'password'){
+							data[$input.name] = $input.value;
+					} else if($input.type === 'file'){
+							data[$input.name] = imageData;
+					}
 				}
+				// Outputting the data
+				return data
 			}
-			req.onreadystatechange = readyStateChange;
-			req.send(JSON.stringify(data));
-		}
 
-		function submit(){
-			var formData = grabData();
-			sendData(formData);
-		}
+			function sendData(data){
+				if(!verifyPassword()){
+					return;
+				}
+				var req = new XMLHttpRequest();
+				req.open('POST', '/form', true);
+				req.setRequestHeader('content-type', 'application/json');
+				// Alert the user to any errors from the server
 
-		var $button = document.querySelector('button')
-		$button.addEventListener('click', submit)
+				function readyStateChange() {
+					if(req.readyState !== 4) return;
+					if(req.status !== 200) return;
+					var body = JSON.parse(req.responseText);
+					if(body.error) {
+						return alert(body.error);
+					}
+					window.location.href = '/game';
+					}
+				req.onreadystatechange = readyStateChange;
+				req.send(JSON.stringify(data));
+			}
+
+			function submit(){
+				var formData = grabData();
+				if(!formData.username) return alert('Enter a username');
+				if(!imageData) return alert('Enter an avatar');
+				sendData(formData);
+			}
+
+			var $button = document.querySelector('button');
+			$button.addEventListener('click', submit);
+
+			var $avatarInput = document.querySelector('input[name=avatar]');
+			var $preview = document.querySelector('#avatar');
+			var imageData;
+
+			$avatarInput.addEventListener('change', previewAvatar);
+
+			function previewAvatar(){
+				var fileReader = new FileReader();
+				fileReader.onload = function(e){
+					imageData = e.target.result;
+					var $img = document.createElement('img');
+					$img.src = imageData;
+					$preview.innerHTML = '';
+					$preview.appendChild($img);
+				}
+				fileReader.readAsDataURL($avatarInput.files[0]);
+			}
 		</script>
 	</body>
 </html>

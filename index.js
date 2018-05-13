@@ -8,6 +8,7 @@ var Io = require('socket.io');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var session = require('express-session');
+var fs = require('fs');
 
 /* The http module is used to listen for requests from a web browser */
 var http = require('http');
@@ -29,16 +30,28 @@ var port =  process.env.PORT ? parseInt(process.env.PORT) : 8080;
 var dbAddress = process.env.MONGODB_URI || 'mongodb://127.0.0.1/game';
 
 function addSockets(){
+
+	var players = {};
+
 	io.on('connection', (socket) =>{
-		io.emit('newMessage', 'user conected');
-		console.log('user connected')
+		var user = socket.handshake.query.user;
+		players[user] = {
+			x: 0, y: 0
+		};
+		io.emit('playerUpdate', players);
+		io.emit('newMessage', {user: user, message: 'Entered the game'});
 		socket.on('disconnect', () => {
-			io.emit('newMessage', 'user disconnected');
-			console.log('user disconnected');
+			delete players[user];
+			io.emit('newMessage', {user: user, message: 'Left the game'});
+			io.emit('playerUpdate', players);
 		});
-		socket.on('message', (message) =>{
+		socket.on('message', (message) => {
 			io.emit('newMessage', message);
-		})
+		});
+		socket.on('playerUpdate', (player) => {
+			players[user] = player;
+			io.emit('playerUpdate', players);
+		});
 	})
 }
 
@@ -77,6 +90,22 @@ function startServer(){
 		})
 	})
 
+	app.get('/picture/:username', (req, res, next) => {
+		if(!req.user) return res.send('YOU ARE NOT LOGGED IN');
+		usermodel.findOne({username: req.params.username}, function(err, user){
+			if(err) return res.send(err);
+			try {
+				var imageType = user.avatar.match(/^data:image\/([a-zA-Z0-9]*);/)[1];
+				var base64Data = user.avatar.split(',')[1];
+				var binaryData = new Buffer(base64Data, 'base64');
+				res.contentType('image/' + imageType);
+				res.end(binaryData, 'binary');
+			} catch(ex){
+				res.send(ex);
+			}
+		})
+	})
+
 	/* Defines what function to call when a request comes from the path '/' in http://localhost:8080 */
 	app.get('/form', (req, res, next) => {
 
@@ -103,9 +132,10 @@ function startServer(){
 
 	app.get('/game', (req, res, next) => {
 		if(!req.user) res.redirect('/login');
-		var filePath = path.join(__dirname, './game.html')
-
-		res.sendFile(filePath);
+		var filePath = path.join(__dirname, './game.html');
+		var fileContents = fs.readFileSync(filePath, 'utf8');
+		fileContents = fileContents.replace('{{USER}}', (req.user.username));
+		res.send(fileContents);
 	});
 
 	app.get('/', (req, res, next) => {
@@ -145,7 +175,14 @@ function startServer(){
 				if(err) {
 					return res.send({error: err.message});
 				}
-				res.send({error: null});
+				passport.authenticate('local', function(err, user){
+					if(err) return res.send({error: err});
+
+					req.logIn(user, (err) => {
+						if (err) return res.send({error: err});
+						return res.send({error: null});
+					});
+				})(req, res, next);
 			});
 		});
 	});
