@@ -10,7 +10,7 @@ function updatePlayers(players){
     if(!gamePieces[playerName]){
       createNewPlayer(playerName);
     }
-    var player = player[playerName];
+    var player = players[playerName];
     var gamePiece = gamePieces[playerName];
     gamePiece.x = player.x;
     gamePiece.y = player.y;
