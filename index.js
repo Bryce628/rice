@@ -136,7 +136,7 @@ function startServer(){
 	});
 
 	app.get('/game', (req, res, next) => {
-		if(!req.user) res.redirect('/login');
+		if(!req.user) return res.redirect('/login');
 		var filePath = path.join(__dirname, './game.html');
 		var fileContents = fs.readFileSync(filePath, 'utf8');
 		fileContents = fileContents.replace('{{USER}}', (req.user.username));
