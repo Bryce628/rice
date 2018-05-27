@@ -32,6 +32,7 @@ var dbAddress = process.env.MONGODB_URI || 'mongodb://127.0.0.1/game';
 function addSockets(){
 
 	var players = {};
+	var cookieBites = [];
 
 	io.on('connection', (socket) =>{
 		var user = socket.handshake.query.user;
@@ -51,6 +52,10 @@ function addSockets(){
 		socket.on('playerUpdate', (player) => {
 			players[user] = player;
 			io.emit('playerUpdate', players);
+		});
+		socket.on('bites', (biteArray) => {
+			cookieBites = cookieBites.concat(biteArray);
+			io.emit('drawBites', biteArray);
 		});
 	})
 }
