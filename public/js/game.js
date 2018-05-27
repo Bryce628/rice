@@ -12,6 +12,7 @@ var cookiePixels;
 var cookieBites = [];
 var eventTimer = [];
 var eventTimeout = 0;
+var isGameOver = false;
 
 socket.on('playerUpdate', updatePlayers);
 socket.on('drawBites', function(biteArray){
@@ -70,7 +71,7 @@ function drawCookie(){
 	context.drawImage(cookieImage, cookieX, cookieY, 2*r , 2*r);
 }
 
-function getCoookiePixels(){
+function getCookiePixels(){
   var imageData = context.getImageData(x-r*2,y-r*5/4, 2*r, 2*r);
   var x = 0;
   var y = 0;
@@ -78,6 +79,7 @@ function getCoookiePixels(){
   var pixel = 0;
   var pixelCount = imageData.data.length/4;
   var size = 2 * r;
+  var hasNonWhitePixel = false;
   cookiePixels = {};
   while(pixel < pixelCount){
     var red = imageData.data[p++];
@@ -87,8 +89,14 @@ function getCoookiePixels(){
     y = pixel % size;
     x = Math.floor(pixel/size);
     cookiePixels[`${x + cookieX}, ${y + cookieY}`] = [red, green, blue, alpha];
+    if(red !== 255 || green !== 255 || blue !== 255){
+      if(alpha === 255){
+        hasNonWhitePixel = true;
+      }
+    }
     pixel++;
   }
+  isGameOver = !hasNonWhitePixel;
 }
 
 function isPlayerTouchingCookie(){
@@ -112,7 +120,7 @@ function isPlayerTouchingCookie(){
 function drawBite(){
   cookieBites.forEach(function(cookieBite){
     context.beginPath();
-    context.arc(cookieBite.x, cookieBite.y, cookieBite.r, 0, 2*Math.PI);
+    context.arc(cookieBite.x, cookieBite.y, $canvas.width/10, 0, 2*Math.PI);
     context.fillStyle = 'white';
     context.fill();
   })
@@ -135,11 +143,27 @@ function takeABite(){
   }, 500);
 }
 
+function announceWinner(){
+  var playerCount = {};
+  cookieBites.forEach(function(cookieBite){
+    var player = cookieBite.user;
+    if(!playerCount[player]){
+      playerCount[player] = 0;
+    }
+    playerCount[player]++;
+  })
+  alert(JSON.stringify(playerCount));
+}
+
 function animate(){
   context.clearRect(0, 0, $canvas.width, $canvas.height);
+  if(isGameOver === true){
+    announceWinner();
+    return;
+  }
   drawCookie();
   drawBite();
-  getCoookiePixels();
+  getCookiePixels();
   drawGamePiece();
   isPlayerTouchingCookie();
   window.requestAnimationFrame(animate);
@@ -167,6 +191,8 @@ function updatePlayerPosition(e){
   socket.emit('playerUpdate', {x: gamePiece.x, y: gamePiece.y});
 }
 
-window.requestAnimationFrame(animate);
+cookieImage.onload = function(){
+    window.requestAnimationFrame(animate);
+}
 createNewPlayer(user);
 document.body.addEventListener('keydown', updatePlayerPosition);
