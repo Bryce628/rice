@@ -16,7 +16,6 @@ var isGameOver = false;
 
 socket.on('playerUpdate', updatePlayers);
 socket.on('drawBites', function(bites){
-  console.log(bites)
   Object.keys(bites).forEach(function(biteKey) {
     //Return out of function if bite has already been added
     if(cookieBites[biteKey]) return;
