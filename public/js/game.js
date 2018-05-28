@@ -101,7 +101,7 @@ function getCookiePixels(){
     }
     pixel++;
   }
-  //isGameOver = !hasNonWhitePixel;
+  isGameOver = !hasNonWhitePixel;
 }
 
 function isPlayerTouchingCookie(){
