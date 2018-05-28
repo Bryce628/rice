@@ -9,17 +9,19 @@ var r = $canvas.width/4;
 var cookieX = $canvas.width/2-r*2;
 var cookieY = $canvas.height/2-r*5/4;
 var cookiePixels;
-var cookieBites = [];
-var eventTimer = [];
+var cookieBites = {};
+var bitesToSendToServer = {};
 var eventTimeout = 0;
 var isGameOver = false;
 
 socket.on('playerUpdate', updatePlayers);
-socket.on('drawBites', function(biteArray){
-  if(biteArray[0].user === user){
-    return;
-  }
-  cookieBites = cookieBites.concat(biteArray);
+socket.on('drawBites', function(bites){
+  console.log(bites)
+  Object.keys(bites).forEach(function(biteKey) {
+    //Return out of function if bite has already been added
+    if(cookieBites[biteKey]) return;
+    cookieBites[biteKey] = 1;
+  })
 });
 
 function updatePlayers(players){
@@ -40,7 +42,6 @@ function updatePlayers(players){
       delete gamePieces[gamePieceName]
     };
   });
-  console.log(players);
 }
 
 function createNewPlayer(playerName){
@@ -80,7 +81,7 @@ function getCookiePixels(){
   var pixelCount = imageData.data.length/4;
   var size = 2 * r;
   var hasNonWhitePixel = false;
-  cookiePixels = {};
+  cookiePixels = [];
   while(pixel < pixelCount){
     var red = imageData.data[p++];
     var green = imageData.data[p++];
@@ -88,7 +89,12 @@ function getCookiePixels(){
     var alpha = imageData.data[p++];
     y = pixel % size;
     x = Math.floor(pixel/size);
-    cookiePixels[`${x + cookieX}, ${y + cookieY}`] = [red, green, blue, alpha];
+    xp = x + cookieX;
+    yp = y + cookieY;
+
+    var arr = [red, green, blue, alpha];
+    cookiePixels[xp] = cookiePixels[xp] || [];
+    cookiePixels[xp][yp] = [red, green, blue, alpha];
     if(red !== 255 || green !== 255 || blue !== 255){
       if(alpha === 255){
         hasNonWhitePixel = true;
@@ -96,7 +102,7 @@ function getCookiePixels(){
     }
     pixel++;
   }
-  isGameOver = !hasNonWhitePixel;
+  //isGameOver = !hasNonWhitePixel;
 }
 
 function isPlayerTouchingCookie(){
@@ -104,7 +110,7 @@ function isPlayerTouchingCookie(){
   var collides = 0;
   for(var avatarX = gamePiece.x; avatarX < pieceWidth + gamePiece.x; avatarX++){
     for(var avatarY = gamePiece.y; avatarY < pieceWidth + gamePiece.y; avatarY++){
-      var pixel = cookiePixels[`${avatarX}, ${avatarY}`];
+      var pixel = (cookiePixels[avatarX] || [])[avatarY];
       if(pixel && pixel.length === 4) {
         takeABite();
         return;
@@ -118,7 +124,8 @@ function isPlayerTouchingCookie(){
 }
 
 function drawBite(){
-  cookieBites.forEach(function(cookieBite){
+  Object.keys(cookieBites).forEach(function(cookieBiteKey){
+    var cookieBite = JSON.parse(cookieBiteKey);
     context.beginPath();
     context.arc(cookieBite.x, cookieBite.y, $canvas.width/10, 0, 2*Math.PI);
     context.fillStyle = 'white';
@@ -133,19 +140,17 @@ function takeABite(){
     r: pieceWidth,
     user: user
   }
-  cookieBites.push(bite);
-  eventTimer.push(bite);
-  if(eventTimeout) return;
-  eventTimeout = setTimeout(function(){
-    socket.emit("bites", eventTimer);
-    eventTimer = [];
-    eventTimeout = 0;
-  }, 500);
+  var biteKey = JSON.stringify(bite);
+  if(!cookieBites[biteKey]) cookieBites[biteKey] = 1;
+  bitesToSendToServer[biteKey] = 1;
+  socket.emit("bites", bitesToSendToServer);
+  bitesToSendToServer = {};
 }
 
 function announceWinner(){
   var playerCount = {};
-  cookieBites.forEach(function(cookieBite){
+  Object.keys(cookieBites).forEach(function(cookieBiteKey){
+    var cookieBite = JSON.parse(cookieBiteKey);
     var player = cookieBite.user;
     if(!playerCount[player]){
       playerCount[player] = 0;
@@ -171,19 +176,20 @@ function animate(){
 
 function updatePlayerPosition(e){
   var gamePiece = gamePieces[user];
-  var speed = 20;
+  var xSpeed = $canvas.width / 30;
+  var ySpeed = $canvas.height / 30;
   switch(e.key){
     case 'ArrowLeft':
-      gamePiece.x -= speed;
+      gamePiece.x -= xSpeed;
       break;
     case 'ArrowRight':
-      gamePiece.x += speed;
+      gamePiece.x += xSpeed;
       break;
     case 'ArrowDown':
-      gamePiece.y += speed;
+      gamePiece.y += ySpeed;
       break;
     case 'ArrowUp':
-      gamePiece.y -= speed;
+      gamePiece.y -= ySpeed;
       break;
     default:
       return;

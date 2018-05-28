@@ -32,7 +32,7 @@ var dbAddress = process.env.MONGODB_URI || 'mongodb://127.0.0.1/game';
 function addSockets(){
 
 	var players = {};
-	var cookieBites = [];
+	var cookieBites = {};
 
 	io.on('connection', (socket) =>{
 		var user = socket.handshake.query.user;
@@ -53,9 +53,11 @@ function addSockets(){
 			players[user] = player;
 			io.emit('playerUpdate', players);
 		});
-		socket.on('bites', (biteArray) => {
-			cookieBites = cookieBites.concat(biteArray);
-			io.emit('drawBites', biteArray);
+		socket.on('bites', (bites) => {
+			Object.keys(bites).forEach((biteKey)=>{
+				cookieBites[biteKey] = 1;
+			});
+			io.emit('drawBites', cookieBites);
 		});
 	})
 }
