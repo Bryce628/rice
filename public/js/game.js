@@ -5,9 +5,9 @@ var gamePiece;
 
 var cookieImage = new Image();
 cookieImage.src = '/img/cookie.png'
-var r = $canvas.width/4;
-var cookieX = $canvas.width/2-r*2;
-var cookieY = $canvas.height/2-r*5/4;
+var r = $canvas.width/5;
+var cookieX = $canvas.width/2 - r;
+var cookieY = $canvas.height/2 - r*5/4;
 var cookiePixels;
 var cookieBites = [];
 var eventTimer = [];
@@ -120,7 +120,7 @@ function isPlayerTouchingCookie(){
 function drawBite(){
   cookieBites.forEach(function(cookieBite){
     context.beginPath();
-    context.arc(cookieBite.x, cookieBite.y, $canvas.width/10, 0, 2*Math.PI);
+    context.arc(cookieBite.x, cookieBite.y, cookieBite.r, 0, 2*Math.PI);
     context.fillStyle = 'white';
     context.fill();
   })
