@@ -175,8 +175,8 @@ function animate(){
 
 function updatePlayerPosition(e){
   var gamePiece = gamePieces[user];
-  var xSpeed = $canvas.width / 30;
-  var ySpeed = $canvas.height / 30;
+  var xSpeed = $canvas.width / 40;
+  var ySpeed = $canvas.height / 40;
   switch(e.key){
     case 'ArrowLeft':
       gamePiece.x -= xSpeed;
